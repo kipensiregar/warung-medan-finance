@@ -1,0 +1,6 @@
+{
+  "name": "Warung Medan Finance",
+  "description": "Sistem keuangan dan pengelolaan operasional Warung Medan CT Catering: rekap penjualan harian, pengeluaran, persediaan & HPP, arus kas, utang-piutang, dan pencadangan offline-first.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

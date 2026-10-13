@@ -72,7 +72,7 @@ export const salesRepository = {
     const now = new Date().toISOString();
     const id = `sales_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    return await db.transaction('rw', [db.dailySales, db.accounts, db.auditLogs, db.syncOutbox], async () => {
+    return await db.transaction('rw', [db.dailySales, db.accounts, db.auditLogs], async () => {
       // Perbarui saldo akun untuk setiap alokasi pembayaran
       for (const split of payload.splits) {
         if (split.amount > 0) {
@@ -108,16 +108,6 @@ export const salesRepository = {
       await db.dailySales.add(summary);
 
       // Catat ke outbox sync
-      await db.syncOutbox.add({
-        id: `outbox_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
-        entityType: 'DAILY_SALES',
-        entityId: id,
-        operation: 'CREATE',
-        payloadJson: JSON.stringify(summary),
-        status: 'PENDING',
-        retryCount: 0,
-        createdAt: now
-      });
 
       // Audit Log
       await db.auditLogs.add({
@@ -139,7 +129,7 @@ export const salesRepository = {
    */
   async voidDailySummary(id: string, reason: string): Promise<void> {
     const now = new Date().toISOString();
-    await db.transaction('rw', [db.dailySales, db.accounts, db.auditLogs, db.syncOutbox], async () => {
+    await db.transaction('rw', [db.dailySales, db.accounts, db.auditLogs], async () => {
       const summary = await db.dailySales.get(id);
       if (!summary) throw new Error('Data penjualan tidak ditemukan');
       if (summary.isVoided) throw new Error('Penjualan ini sudah dibatalkan sebelumnya');
@@ -162,6 +152,7 @@ export const salesRepository = {
         notes: summary.notes ? `${summary.notes} (DIBATALKAN: ${reason})` : `DIBATALKAN: ${reason}`,
         updatedAt: now
       });
+
 
       await db.auditLogs.add({
         id: `audit_${Date.now()}`,

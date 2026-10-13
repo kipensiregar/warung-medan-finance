@@ -59,7 +59,7 @@ export const transactionRepository = {
 
     return await db.transaction(
       'rw',
-      [db.transactions, db.accounts, db.payables, db.receivables, db.auditLogs, db.syncOutbox],
+      [db.transactions, db.accounts, db.payables, db.receivables, db.auditLogs],
       async () => {
         const sourceAcc = await db.accounts.get(payload.sourceAccountId);
         if (!sourceAcc) throw new Error('Akun sumber dana tidak ditemukan');
@@ -156,17 +156,6 @@ export const transactionRepository = {
 
         await db.transactions.add(tx);
 
-        await db.syncOutbox.add({
-          id: `outbox_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
-          entityType: 'TRANSACTION',
-          entityId: id,
-          operation: 'CREATE',
-          payloadJson: JSON.stringify(tx),
-          status: 'PENDING',
-          retryCount: 0,
-          createdAt: now
-        });
-
         await db.auditLogs.add({
           id: `audit_${Date.now()}`,
           action: 'ADD_TRANSACTION',
@@ -225,6 +214,14 @@ export const transactionRepository = {
         notes: tx.notes ? `${tx.notes} (DIBATALKAN: ${reason})` : `DIBATALKAN: ${reason}`,
         updatedAt: now
       });
+
+      const updatedTx = await db.transactions.get(id);
+      if (sourceAcc) {
+        const freshSource = await db.accounts.get(tx.sourceAccountId);
+      }
+      if (tx.destinationAccountId) {
+        const freshDest = await db.accounts.get(tx.destinationAccountId);
+      }
 
       await db.auditLogs.add({
         id: `audit_${Date.now()}`,
